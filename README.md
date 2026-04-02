@@ -4,72 +4,89 @@
     https://img.shields.io/pypi/v/garth-mcp-server.svg?logo=python&logoColor=brightgreen&color=brightgreen)](
     https://pypi.org/project/garth-mcp-server/)
 
-Garmin Connect MCP server based on [garth](https://github.com/matin/garth). Fork of [matin/garth-mcp-server](https://github.com/matin/garth-mcp-server).
+Garmin Connect MCP server based on [garth](https://github.com/matin/garth).
 
-## Setup
+## Usage
 
-### 1. Create the virtual environment
+![image](https://github.com/user-attachments/assets/14221e6f-5f65-4c21-bc7a-2147c1c9efc1)
 
-The repo includes a `.python-version` file (3.13.11). If using pyenv:
-
-```bash
-pyenv install $(cat .python-version)
-```
-
-Then create the venv and install:
-
-```bash
-$(pyenv prefix $(cat .python-version))/bin/python3 -m venv .venv
-.venv/bin/pip install -e .
-```
-
-### 2. Authenticate with Garmin Connect
-
-```bash
-.venv/bin/python3 -c "import garth; garth.login(); print(garth.client.dumps())"
-```
-
-This will prompt for your Garmin email and password (+ MFA if enabled). Copy the output token.
-
-Alternatively, if you have `uvx` installed:
-
-```bash
-uvx garth login
-```
-
-### 3. Add the token to `.mcp.json`
-
-In the project root's `.mcp.json`, set the `GARTH_TOKEN` value:
+## Install
 
 ```json
 {
   "mcpServers": {
-    "garmin": {
-      "type": "stdio",
-      "command": "./mcp/garmin/.venv/bin/garth-mcp-server",
-      "args": [],
+    "Garth - Garmin Connect": {
+      "command": "uvx",
+      "args": [
+        "garth-mcp-server"
+      ],
       "env": {
-        "GARTH_TOKEN": "<paste token here>"
+        "GARTH_TOKEN": "<output of garth-mcp-auth>"
       }
     }
   }
 }
 ```
 
-### 4. Verify
+Make sure the path for the `uvx` command is fully scoped as MCP doesn't
+use the same PATH your shell does. On macOS, it's typically
+`/Users/{user}/.local/bin/uvx`.
 
-Restart Claude Code. The garmin MCP tools should appear (prefixed with `garmin__` in the tool list).
+## Authentication
+
+The server requires a `GARTH_TOKEN` environment variable containing your
+Garmin Connect OAuth tokens. MFA (multi-factor authentication) is fully
+supported.
+
+### Using garth-mcp-auth (recommended)
+
+```bash
+uvx --from garth-mcp-server garth-mcp-auth
+```
+
+This will prompt for:
+1. Your Garmin email
+2. Your Garmin password (hidden)
+3. Your MFA code (if MFA is enabled on your account)
+
+On success, it prints a token string. Copy this into your MCP config's
+`GARTH_TOKEN` value.
+
+### Using garth CLI
+
+Alternatively, you can use the [garth](https://github.com/matin/garth) CLI
+directly:
+
+```bash
+uvx garth login
+```
+
+### Token lifetime
+
+The token includes an OAuth1 token and an MFA token. The MFA token is
+typically valid for ~1 year, so you should only need to re-authenticate
+annually. The OAuth2 access token expires more frequently but is
+automatically refreshed by the server using the OAuth1 token.
 
 ## Tool Filtering
 
-By default, all 30 tools are exposed. To reduce context size, filter with environment variables.
+By default, all 30 tools are exposed. To reduce context size for LLM usage,
+you can filter tools using environment variables.
 
 ### Enable specific tools only (whitelist)
 
 ```json
-"env": {
-  "GARTH_TOKEN": "<token>",
-  "GARTH_ENABLED_TOOLS": "get_activities,get_activity_details,nightly_sleep,daily_hrv,get_body_composition"
+{
+  "mcpServers": {
+    "Garth - Garmin Connect": {
+      "command": "uvx",
+      "args": ["garth-mcp-server"],
+      "env": {
+        "GARTH_TOKEN": "<token>",
+        "GARTH_ENABLED_TOOLS": "get_activities,get_activity_details,daily_steps,nightly_sleep"
+      }
+    }
+  }
 }
 ```
 
@@ -82,7 +99,8 @@ By default, all 30 tools are exposed. To reduce context size, filter with enviro
 }
 ```
 
-Tool names are case-insensitive and comma-separated. If `GARTH_ENABLED_TOOLS` is set, `GARTH_DISABLED_TOOLS` is ignored.
+Tool names are case-insensitive and comma-separated. If `GARTH_ENABLED_TOOLS`
+is set, `GARTH_DISABLED_TOOLS` is ignored.
 
 ## Tools
 
