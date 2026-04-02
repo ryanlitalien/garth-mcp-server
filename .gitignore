@@ -40,7 +40,6 @@ test.py
 /site.zip
 
 # Other files and folders
-.python-version
 .DS_Store
 .auto-format
 /sandbox/
