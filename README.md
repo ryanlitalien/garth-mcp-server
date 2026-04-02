@@ -26,16 +26,11 @@ $(pyenv prefix $(cat .python-version))/bin/python3 -m venv .venv
 ### 2. Authenticate with Garmin Connect
 
 ```bash
-.venv/bin/python3 -c "import garth; garth.login(); print(garth.client.dumps())"
+.venv/bin/garth-mcp-auth
 ```
 
-This will prompt for your Garmin email and password (+ MFA if enabled). Copy the output token.
-
-Alternatively, if you have `uvx` installed:
-
-```bash
-uvx garth login
-```
+This will prompt for your Garmin email, password (hidden), and MFA code
+(if MFA is enabled). On success, it prints a token string.
 
 ### 3. Add the token to `.mcp.json`
 
@@ -59,6 +54,13 @@ In the project root's `.mcp.json`, set the `GARTH_TOKEN` value:
 ### 4. Verify
 
 Restart Claude Code. The garmin MCP tools should appear (prefixed with `garmin__` in the tool list).
+
+### Token lifetime
+
+The token includes an OAuth1 token and an MFA token. The MFA token is
+typically valid for ~1 year, so you should only need to re-authenticate
+annually. The OAuth2 access token expires more frequently but is
+automatically refreshed by the server using the OAuth1 token.
 
 ## Tool Filtering
 
